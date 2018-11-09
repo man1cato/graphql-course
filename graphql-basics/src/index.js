@@ -3,7 +3,7 @@ import { GraphQLServer } from 'graphql-yoga'
 //Scalar types - String, Boolean, Int, Float, ID
 
 
-//Demo user data
+//Demo data
 const users = [{
     id: '1',
     name: 'Andres',
@@ -19,12 +19,34 @@ const users = [{
     email: 'mike@example.com'
 }]
 
+const posts = [{
+    id: '11',
+    title: 'blah',
+    body: '',
+    published: false,
+    author: '2'
+}, {
+    id: '12',
+    title: 'Fav movie',
+    body: 'Infinity war',
+    published: true,
+    author: '1'
+}, {
+    id: '13',
+    title: 'Fav music genre',
+    body: 'Hip hop',
+    published: true,
+    author: '1'
+}]
+
+
 //Type definitions (schema)
 const typeDefs = `
     type Query {
         me: User!
         post: Post!
         users(query: String): [User!]!
+        posts(query: String): [Post!]!
     }
 
     type User {
@@ -39,6 +61,7 @@ const typeDefs = `
         title: String!
         body: String!
         published: Boolean!
+        author: User!
     }
 `
 
@@ -64,8 +87,22 @@ const resolvers = {
             if (!args.query) {
                 return users
             }
-
             return users.filter((user) => user.name.toLowerCase().includes(args.query.toLowerCase()))
+        },
+        posts(parent, args, ctx, info) {
+            if(!args.query) {
+                return posts
+            }
+            return posts.filter((post) => 
+                post.title.toLowerCase().includes(args.query.toLowerCase()) 
+                || 
+                post.body.toLowerCase().includes(args.query.toLowerCase())
+            )
+        }
+    },
+    Post: {
+        author(parent, args, ctx, info) {
+            return users.find((user) => user.id === parent.author) 
         }
     }
 }
