@@ -5,3 +5,4 @@ generate:
       output: ./generated/prisma
     - generator: graphql-schema
       output: ./generated/prisma 
+secret: 2gm92t3hje9fj1jwfcpe
