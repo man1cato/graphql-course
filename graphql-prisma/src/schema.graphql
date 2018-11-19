@@ -1,4 +1,5 @@
 #Scalar types - String, Boolean, Int, Float, ID
+#import UserOrderByInput, PostOrderByInput, CommentOrderByInput from './generated/prisma.graphql'
 
 type User {
     id: ID!
@@ -7,6 +8,8 @@ type User {
     password: String!
     posts: [Post!]!
     comments: [Comment!]!
+    updatedAt: String!
+    createdAt: String!
 }
 
 type Post {
@@ -16,6 +19,8 @@ type Post {
     published: Boolean!
     author: User!
     comments: [Comment!]!
+    updatedAt: String!
+    createdAt: String!
 }
 
 type Comment {
@@ -23,15 +28,17 @@ type Comment {
     text: String!
     author: User!
     post: Post!
+    updatedAt: String!
+    createdAt: String!
 }
 
 type Query {
-    me: User!
+    users(query: String, first: Int, skip: Int, after: String, orderBy: UserOrderByInput): [User!]!
+    posts(query: String, first: Int, skip: Int, after: String, orderBy: PostOrderByInput): [Post!]!
+    comments(first: Int, skip: Int, after: String, orderBy: CommentOrderByInput): [Comment!]!
     post(id: ID!): Post!
-    users(query: String): [User!]!
-    myPosts(query: String): [Post!]!
-    posts(query: String): [Post!]!
-    comments: [Comment!]!
+    me: User!
+    myPosts(query: String, first: Int, skip: Int, after: String, orderBy: PostOrderByInput): [Post!]!
 }
 
 type Mutation {
