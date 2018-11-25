@@ -6,10 +6,10 @@ import hashPassword from '../utils/hashPassword'
 
 
 const Mutation = {
-    async loginUser(parent, { email, password }, { prisma }, info) {
+    async loginUser(parent, { data }, { prisma }, info) {
         const user = await prisma.query.user({
             where: {
-                email
+                email: data.email
             }
         })
         
@@ -19,7 +19,7 @@ const Mutation = {
 
         const hashedPassword = user.password
 
-        const isMatch = await bcrypt.compare(password, hashedPassword)
+        const isMatch = await bcrypt.compare(data.password, hashedPassword)
         
         if (!isMatch) {
             throw new Error('Password is incorrect')

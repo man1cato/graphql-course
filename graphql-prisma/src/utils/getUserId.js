@@ -8,7 +8,7 @@ export default (request, requireAuth = true) => {
 
     if (header) {
         const token = header.replace('Bearer ', '')
-        const decoded = jwt.verify(token, 'thisisasecret')  //if verification fails, error is thrown
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)  //if verification fails, error is thrown
     
         return decoded.userId
     }
