@@ -1,26 +1,17 @@
 import 'cross-fetch/polyfill'
-import { gql } from 'apollo-boost'
 
 import prisma from '../src/prisma'
 import seedDatabase, { userOne, postOne, postTwo } from './utils/seedDatabase'
 import getClient from './utils/getClient'
+import { createPost, updatePost, deletePost, getPosts, getMyPosts,subscribeToPosts } from './utils/operations'
+
 
 const client = getClient()
 
 beforeEach(seedDatabase)
 
-test('Should expose published posts', async () => {
-    const getPosts = gql`
-        query {
-            posts {
-                id
-                title
-                body
-                published
-            }
-        }
-    `
 
+test('Should expose published posts', async () => {
     const response = await client.query({ query: getPosts })
     
     expect(response.data.posts.length).toBe(1)
@@ -28,18 +19,7 @@ test('Should expose published posts', async () => {
 })
 
 test('Should fetch my posts', async () => {
-    const client = getClient(userOne.jwt)
-
-    const getMyPosts = gql`
-        query {
-            myPosts {
-                id
-                title
-                body
-                published
-            }
-        }
-    `
+    const client = getClient(userOne.jwt)    
     const { data } = await client.query({ query: getMyPosts })
 
     expect(data.myPosts.length).toBe(2)
@@ -47,23 +27,14 @@ test('Should fetch my posts', async () => {
 
 test('Should be able to update own post', async () => {
     const client = getClient(userOne.jwt)
-
-    const updatePost = gql`
-        mutation {
-            updatePost(
-                id: "${postOne.post.id}",   #always use double quotes within graphql
-                data: {
-                    published: false
-                }
-            ) {
-                id
-                title
-                body
-                published
-            }
-        } 
-    `
-    const { data } = await client.mutate({ mutation: updatePost })
+    const variables = {
+        id: postOne.post.id,
+        data: {
+            published: false
+        }
+    }
+    
+    const { data } = await client.mutate({ mutation: updatePost, variables })
     const postExists = await prisma.exists.Post({ id: postOne.post.id, published: false })
 
     expect(data.updatePost.published).toBe(false)
@@ -72,24 +43,15 @@ test('Should be able to update own post', async () => {
 
 test('Should create a new post', async () => {
     const client = getClient(userOne.jwt)
-
-    const createPost = gql`
-        mutation {
-            createPost (
-                data: {
-                    title: "Test post",
-                    body: "",
-                    published: true
-                }
-            ){
-                id
-                title
-                body
-                published
-            }
+    const variables = {
+        data: {
+            title: 'Test post',
+            body: '',
+            published: true
         }
-    `
-    const { data } = await client.mutate({ mutation: createPost })
+    }
+
+    const { data } = await client.mutate({ mutation: createPost, variables })
     
     expect(data.createPost.title).toBe('Test post')
     expect(data.createPost.body).toBe('')
@@ -98,18 +60,23 @@ test('Should create a new post', async () => {
 
 test('Should delete post two', async () => {
     const client = getClient(userOne.jwt)
-    
-    const deletePost = gql`
-        mutation {
-            deletePost (
-                id: "${postTwo.post.id}"
-            ){
-                id
-            }
-        }
-    ` 
-    await client.mutate({ mutation: deletePost })
+    const variables = {
+        id: postTwo.post.id
+    }
+
+    await client.mutate({ mutation: deletePost, variables })
     const postExists = await prisma.exists.Post({ id: postTwo.post.id })
 
     expect(postExists).toBe(false)
+})
+
+test('Should subscribe to posts', async (done) => {
+    client.subscribe({ query: subscribeToPosts }).subscribe({
+        next(response) {
+            expect(response.data.post.mutation).toBe('DELETED')
+            done()
+        }
+    })
+
+    await prisma.mutation.deletePost({ where: { id: postOne.post.id } })
 })
